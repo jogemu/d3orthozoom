@@ -1,0 +1,27 @@
+{
+  "name": "d3orthozoom",
+  "version": "0.1.0",
+  "description": "Scale and rotate orthographic projection while preserving a cardinal direction",
+  "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jogemu/d3orthozoom.git"
+  },
+  "keywords": [
+    "d3.js",
+    "orthographic",
+    "globe",
+    "zoom",
+    "interactive",
+    "svg"
+  ],
+  "author": "jogemu",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/jogemu/d3orthozoom/issues"
+  },
+  "homepage": "https://github.com/jogemu/d3orthozoom#readme",
+  "dependencies": {
+    "d3": "^7.8.5"
+  }
+}
