@@ -38,15 +38,15 @@ d3.select('#globe').call(zoom).on('mousewheel.zoom', null)
 
 The vector `v` is introduced with the pointer's absolute (`v.x`, `v.y`) and relative (`v.xr`, `v.yr`) distance from the center of the projection. Relative values are 0 at the center and absolute 1 at radius. `lon` and `lat` are determined by inverse projection of the pointer position at zoom start.
 
-Reach is the maximum longitude/latitude possible divided by 90. Both are symmetrical. For the longitude the pole is mentally rotated in the center, then the distance of the latitude is just the cosine.
+Reach is the maximum longitudinal and latitudinal distance that the point under the pointer can be moved away from the rotation center divided by 90. Each distance is symmetrical. For the longitude the pole is mentally rotated in the center, then the farthest distance from the pole is the cosine of the latitude.
 
-The Pythagorean theorem is used for the latitude. Since v.xr is already in the unit circle, one moves v.xr to the right, then up until the circle is reached. Going back to the start (center) has the length of the radius (hypotenuse = 1).
+The Pythagorean theorem is used for the latitude. Since v.xr is already in the unit circle, one moves v.xr to the right, then the unknown distance up until the circle is reached. Going back to the start (center) has the length of the radius (hypotenuse = 1).
 
 These variables remain relevant until the end.
 
 ```
 reach.lon = cosd(abs(lat))
-reach.lat = Math.sqrt(1 - (v.xr) ** 2)
+reach.lat = Math.sqrt(1 - v.xr ** 2)
 ```
 
 The projection is increased above user input if necessary.
