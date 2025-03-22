@@ -1,6 +1,6 @@
 # D3OrthoZoom
 
-This implements `d3.zoom()` for the `d3.geoOrthographic()` projection while preserving a cardinal direction that can only be reversed. Transformations are carried out through rotations, which, with the addition of scaling, also enables interactive projections that can be viewed from all sides.
+An implementation of `d3.zoom()` for the `d3.geoOrthographic()` projection that keeps the area of interest centered under the cursor. This is achieved through rotations, rather than panning, essentially avoiding map distortions while typically maintaining an orientation, like north-up.
 
 In existing implementations, whether or not with [d3.js](https://d3js.org/), either the position under the cursor moves or the projection is rotated in all three axes, resulting in a loss of northing. There are limitations in preventing these unwanted effects, but this implementation copes with those limitations by embracing them. Simply put, every time this implementation encounters an undefined position it scales up the projection above what `d3.zoom()` asked for.
 
@@ -36,11 +36,11 @@ d3.select('#globe').call(zoom).on('mousewheel.zoom', null)
 
 ## Calculation
 
-The vector `v` is introduced with the pointer's absolute (`v.x`, `v.y`) and relative (`v.xr`, `v.yr`) distance from the center of the projection. Relative values are 0 at the center and absolute 1 at radius. `lon` and `lat` are determined by inverse projection of the pointer position at zoom start.
+The vector `v` is introduced with the pointer's absolute (`v.x`, `v.y`) and relative (`v.xr`, `v.yr`) distance from the center of the projection. Relative values are 0 at the center and 1 at radius. `lon` and `lat` are determined by inverse projection of the pointer position at zoom start.
 
 Reach is the maximum longitudinal and latitudinal distance that the point under the pointer can be moved away from the rotation center divided by 90. Each distance is symmetrical. For the longitude the pole is mentally rotated in the center, then the farthest distance from the pole is the cosine of the latitude.
 
-The Pythagorean theorem is used for the latitude. Since v.xr is already in the unit circle, one moves v.xr to the right, then the unknown distance up until the circle is reached. Going back to the start (center) has the length of the radius (hypotenuse = 1).
+The Pythagorean theorem is used for the latitude. Since `v.xr` is already in the unit circle, one moves `v.xr` to the right, then the unknown distance up until the circle is reached. Going back to the start (center) has the length of the radius (hypotenuse = 1).
 
 These variables remain relevant until the end.
 
@@ -59,7 +59,7 @@ projection.scale(max(
 ))
 ```
 
-The asind will go from [-180, 180] depending on how close the relative x value is to the maximum x value (pole too far). Fortunately, this also puts it on a vertical line with the cursor.
+The `asind` will go from `[-180, 180]` depending on how close the relative `x` value is to the maximum `x` value (pole too far). Fortunately, this also puts it on a vertical line with the cursor.
 
 ```
 r0 = asind(v.xr / reach.lon) - lon
