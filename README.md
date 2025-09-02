@@ -1,87 +1,70 @@
 # D3OrthoZoom
 
-An implementation of `d3.zoom()` for the `d3.geoOrthographic()` projection that keeps the area of interest centered under the cursor. This is achieved through rotations, rather than panning, essentially avoiding map distortions while typically maintaining an orientation, like north-up.
+An implementation of `d3.zoom()` for the `d3.geoOrthographic()` projection that zooms to the cursor/pointer. Performing rotations rather than panning minimizes distortions. In other implementations, this approach causes a loss of northing because certain points simply cannot be reached without rotating all axes. At least not without increasing scaling above the user's input. Understanding the minimum scaling was crucial to figure out the right rotation.
 
-In existing implementations, whether or not with [d3.js](https://d3js.org/), either the position under the cursor moves or the projection is rotated in all three axes, resulting in a loss of northing. There are limitations in preventing these unwanted effects, but this implementation copes with those limitations by embracing them. Simply put, every time this implementation encounters an undefined position it scales up the projection above what `d3.zoom()` asked for.
+```html
+<svg v-scope v-effect="d3orthozoom($el, $data)">
+  <path :d="d('Sphere')" fill="lightblue"></path>
+  <path :d="d('Graticule')" stroke="black" fill="none"></path>
+</svg>
 
-## Getting started
-
-After installing [Node.js](https://nodejs.org) you can use npm to add d3orthozoom in your project folder.
-
+<script src="https://unpkg.com/d3orthozoom"></script>
+<script src="https://unpkg.com/@jogemu/petite-vue" defer init></script>
 ```
-npm install d3orthozoom
-```
 
-Import and use d3orthozoom like this.
+Use `v-scope` to define or fetch data. Hide with `v-if` or modify with `@click`.
 
-```
-import * as d3 from 'd3'
-import { orthoZoom } from 'd3orthozoom'
+```html
+<div v-scope="{visible: true, world: geoJSON}">
+  <svg v-effect="d3orthozoom($el, $data)">
+    <path :d="d('Sphere')" fill="lightblue"></path>
+    <path :d="d(world)" v-if="visible"></path>
+  </svg>
+  <button @click="rotate=[0,0,0];scale=1">Reset Projection</button>
+  <input type="checkbox" v-model="visible"> Hide layer
+</div>
 
-const projection = d3.geoOrthographic()
-const svg = d3.select('#svg')
-const globe = d3.select('#globe')
-// structure <svg id="svg"><g id="globe"></g></svg>
-// <g> will prevent call of zoom outside globe
-// add projected data only to #globe
-
-function render() {
-  // will be called after scaling and rotation is done
-}
-
-const zoom = orthoZoom(projection, svg.node, render)
-// zoom.scale(2)
-d3.select('#globe').call(zoom).on('mousewheel.zoom', null)
+<script>var geoJSON = fetch('/path/to.json').then(o => o.json()).catch(e => 'TODO handle error')</script>
+<script src="https://unpkg.com/d3orthozoom"></script>
+<script src="https://unpkg.com/@jogemu/petite-vue" defer init></script>
 ```
 
 ## Calculation
 
-The vector `v` is introduced with the pointer's absolute (`v.x`, `v.y`) and relative (`v.xr`, `v.yr`) distance from the center of the projection. Relative values are 0 at the center and 1 at radius. `lon` and `lat` are determined by inverse projection of the pointer position at zoom start.
+An orthographic projection with a scale of `1`, a translation of `[0, 0]` and rotation of `[0, 0, 0]` is projected onto the **unit circle**. To obtain the **equivalent coordinates** `x` and `y` for all other projections, scale, translation and rotation are inverted. The inverse projection of these coordinates returns the `lon`gitude and `lat`itude that is projected to that point.
 
-Reach is the maximum longitudinal and latitudinal distance that the point under the pointer can be moved away from the rotation center divided by 90. Each distance is symmetrical. For the longitude the pole is mentally rotated in the center, then the farthest distance from the pole is the cosine of the latitude.
+In this calculation, `[lon, lat]` refers to the start position, while `[x, y]` refers to intermediate positions. The objective is to determine the **two-axis rotation** where the projection of `[lon, lat]` equals `[x, y]`. If `[x, y]` equals `[0, 0]` then the rotation is `[-lon, -lat, ]`.
 
-The Pythagorean theorem is used for the latitude. Since `v.xr` is already in the unit circle, one moves `v.xr` to the right, then the unknown distance up until the circle is reached. Going back to the start (center) has the length of the radius (hypotenuse = 1).
+The North Pole and South Pole are always along the angle determined by the fixed rotation axis. Hence, no two-axis rotation can move the poles to a position `[x, y]` that is not aligned with the rotation axis. More broadly, any point's pole distance (`x`) cannot exceed the cosine of its latitude. Conceptually rotate the nearest pole in the center to see why.
 
-These variables remain relevant until the end.
+Any movement of `x` perpendicular to the axis reduces possible movement within the unit circle parallel to the axis. Going back to the start (center) has the length of the radius (hypotenuse = 1), which is already everything needed for the Pythagorean theorem.
 
 ```
-reach.lon = cosd(abs(lat))
-reach.lat = Math.sqrt(1 - v.xr ** 2)
+reachX = max(cosd(lat), epsilon)
+reachY = sqrt(1 - x*x)
 ```
 
 The projection is increased above user input if necessary.
 
 ```
 projection.scale(max(
-  k * event.transform.k,  // user input
-  v.norm,                 // to prevent leaving globe
-  abs(v.x) / reach.lon    // to prevent pole too far
+  event.transform.k,  // user input
+  sqrt(x*x + y*y),    // to prevent leaving globe
+  abs(x) / reachX     // to prevent pole too far
 ))
 ```
 
 The `asind` will go from `[-180, 180]` depending on how close the relative `x` value is to the maximum `x` value (pole too far). Fortunately, this also puts it on a vertical line with the cursor.
 
 ```
-r0 = asind(v.xr / reach.lon) - lon
+r0 = asind(x / reachX) - lon
 ```
 
-Next the latitude of a point is calculated that is on the same height as the pointer and on the centered line that goes south from the north pole.
+In an intermediate step, the latitude of a point is calculated that is on the same height as the pointer and on the centered line that goes south from the North Pole.
 
 A second step calculates the latitude of the pointer and adds or subtracts the previous value based on the hemisphere. Both steps must take into account the limitations imposed by the reach.
 
 ```
-r1 = -90 + asind(cosd(lat) * cosd(lon + r0) / reach.lat)
-r1 = -asind(v.yr / reach.lat) + r1 * sign(lat)
+lat_ = -90 + asind(cosd(lat) * cosd(lon + r0) / reachY)
+r1 = -asind(y / reachY) + lat_ * sign(lat)
 ```
-
-## Intuitive interaction
-
-For flat projections, it is common that the point under the cursor remains under it during the zooming. For pinch-to-zoom (multi-touch) this point is in the center of the touch events. Ideally, the points under the fingers follow the fingers as if the fingers were physically pulling them apart or squeezing them. For the latter, it is particularly unintuitive if points increasingly deviate from their expected positions.
-
-However, the best thing to do is to just try it out. Write down anything that catches your eye and seems unintuitive. Especially when comparing it to a different map, the differences should be obvious.
-
-## Room for improvement
-
-If the pointer is very close or on the axis of the cardinal direction then not even greatly exaggerated zoom can correct a movement. Let me know about your thoughts on what the tolerances should be. Is shifting the axis intuitive or is it better to simply ignore movements that cannot be performed?
-
-When zooming out, it is unintuitive that the projection stops getting smaller, if the point would be too far from the pole. Direct feedback is missing, especially if the zooming starts already at the limit. An animation that briefly enlarges the projection and then reduces it could give visual feedback. This is not included because this might interfere with your d3 code. On the other hand, repeated/continuous zooming could just translate the projection.

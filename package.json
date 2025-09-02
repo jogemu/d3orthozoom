@@ -1,27 +1,47 @@
 {
   "name": "d3orthozoom",
-  "version": "0.1.0",
-  "description": "Scale and rotate orthographic projection while preserving a cardinal direction",
-  "main": "main.js",
+  "version": "0.2.0",
+  "description": "Scale and rotate orthographic projections while preserving a bidirectional azimuth.",
+  "keywords": [
+    "d3-zoom",
+    "orthographic-projection",
+    "zoom-to-cursor",
+    "interactive",
+    "cartography",
+    "d3js",
+    "globe",
+    "sphere",
+    "rotation",
+    "perspective-projection",
+    "d3-geo-projection",
+    "cardinal-direction",
+    "north-up",
+    "bidirectional-azimuth",
+    "bidirectional-bearing",
+    "fixed-axis",
+    "fixed-axis-rotation"
+  ],
+  "homepage": "https://github.com/jogemu/d3orthozoom#readme",
+  "bugs": {
+    "url": "https://github.com/jogemu/d3orthozoom/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jogemu/d3orthozoom.git"
   },
-  "keywords": [
-    "d3.js",
-    "orthographic",
-    "globe",
-    "zoom",
-    "interactive",
-    "svg"
-  ],
-  "author": "jogemu",
   "license": "UNLICENSED",
-  "bugs": {
-    "url": "https://github.com/jogemu/d3orthozoom/issues"
+  "author": "jogemu",
+  "type": "module",
+  "main": "d3orthozoom.js",
+  "scripts": {
+    "build": "esbuild d3orthozoom.js --bundle --minify --outdir=dist"
   },
-  "homepage": "https://github.com/jogemu/d3orthozoom#readme",
   "dependencies": {
     "d3": "^7.8.5"
-  }
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.9"
+  },
+  "unpkg": "dist/d3orthozoom.js",
+  "jsdelivr": "dist/d3orthozoom.js"
 }
