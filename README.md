@@ -15,12 +15,13 @@ An implementation of `d3.zoom()` for the `d3.geoOrthographic()` projection that 
 Use `v-scope` to define or fetch data. Hide with `v-if` or modify with `@click`.
 
 ```html
-<div v-scope="{visible: true, world: geoJSON }">
+<div v-scope="{visible: true, world: geoJSON, point: [0, 0]}">
   <svg v-effect="d3orthozoom($el, $data)">
     <path :d="d({type: 'Sphere'})" fill="lightblue"></path>
     <path :d="d(world)" fill="teal" v-if="visible"></path>
     <path :d="d({type: 'Graticule', stepMinor: [10, 10], stepMajor: [90, 360]})" stroke="black" fill="none"></path>
     <path :d="d({type: 'Circle', center: [0, 0], radius: 10})" fill="tomato"></path>
+    <path :d="d(point)" v-effect="drag($el, point)" fill="purple"></path>
   </svg>
   <button @click="rotate=[0,0,0];scale=1">Reset Projection</button>
   <input type="checkbox" v-model="visible"> Hide layer

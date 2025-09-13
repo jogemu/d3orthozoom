@@ -1,4 +1,4 @@
-import { zoom, pointers, select, geoOrthographic, geoPath, geoGraticule, geoCircle } from 'd3'
+import { zoom, pointers, select, drag, geoOrthographic, geoPath, geoGraticule, geoCircle } from 'd3'
 
 // Scale and rotate orthographic projections while preserving a bidirectional azimuth.
 // This function is intended to be a reactive effect. (reevaluate on property change)
@@ -84,6 +84,7 @@ export function d3orthozoom(svg, d, epsilon=1e-6) {
       d.rotate[1] = -asind(y / reachY) + lat_ * sign(lat)
     }, af))
     select(svg).call(d.zoom).on('mousewheel.zoom', null)
+    d.drag = (path, o) => select(path).call(drag().on('drag', event => Object.assign(o, d.projection.invert(pointer(event)))))
   }
   if(!svg.__transition) d.zoom.scaleTo(select(svg), d.scale)
 }

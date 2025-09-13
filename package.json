@@ -1,6 +1,6 @@
 {
   "name": "d3orthozoom",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Scale and rotate orthographic projections while preserving a bidirectional azimuth.",
   "keywords": [
     "d3-zoom",
